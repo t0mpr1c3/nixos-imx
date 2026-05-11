@@ -1,26 +1,36 @@
 
-# NixOS Overlays
+# Nix Overlays
 
-Nix(OS) manages its packages in a global attribute set, mostly referred to as `nixpkgs` (as repository/sources) or simply as `pkgs` (when evaluated).
+Nix manages its packages in a global attribute set, mostly referred to as `nixpkgs` (as repository/sources) 
+or simply as `pkgs` (when evaluated).
 
-Overlays are a mechanism to add or replace packages in that attribute set, such that wherever else they are referenced (e.g. as `pkg.<package>`) the added/replaced version is used.
+Overlays are a mechanism to add or replace packages in that attribute set, such that wherever else they are 
+referenced (e.g. as `pkg.<package>`) the added/replaced version is used.
 
 Any number of overlays can be applied in sequence when instantiating/evaluating `nixpkgs` into `pkgs`.
 Each overlay is a function with two parameters returning an attrset which is merged onto `pkgs`.
-The first parameter (called `final`) is the `pkgs` as it will result after applying all overlays. This works because of nix's lazy evaluation, but accessing attributes that are based on the result of the current overlay will logically cause unresolvable recursions.
+The first parameter (called `final`) is the `pkgs` as it will result after applying all overlays. 
+This works because of nix's lazy evaluation, but accessing attributes that are based on the result of the 
+current overlay will logically cause unresolvable recursions.
 For that reason, the second parameter `prev` is the version of `pkgs` from before applying the overlay.
-As a general guideline, use `final` where possible (to avoid consuming unpatched packages) and `prev` only when necessary to avoid recursions.
+As a general guideline, use `final` where possible (to avoid consuming unpatched packages) and `prev` only 
+when necessary to avoid recursions.
 
-`prev` thus gives access to the packages being overridden and allows (the build instructions for) the overriding package to be based off the unmodified package.
-Most packages in `nixpkgs` are constructed using something like `callPackage ({ ...args }: mkDerivation { ...attributes }) { ...settings }`, where `callPackage` is usually in `all-packages.nix` and imports the code in the parentheses from a different file.
+`prev` thus gives access to the packages being overridden and allows (the build instructions for) the 
+overriding package to be based off the unmodified package.
+Most packages in `nixpkgs` are constructed using something like 
+`callPackage ({ ...args }: mkDerivation { ...attributes }) { ...settings }`, where `callPackage` is 
+usually in `all-packages.nix` and imports the code in the parentheses from a different file.
 Passed by `callPackage`, `args` includes `pkgs` plus optionally the `settings` to the package.
 The `attributes` are then based on local values and packages and settings from `args`.
-Any package built that way then has two functions which allow overlays (or code elsewhere) to define modified versions of that package:
+Any package built that way then has two functions which allow overlays (or code elsewhere) to define 
+modified versions of that package:
 * `.overwrite` is a function taking an attrset that is merged over `args` before re-evaluation the package;
 * `.overrideAttrs` is a function from the old `attributes` to ones that are merged over `attributes` before building the derivation.
 
 Using the above mechanisms, each file in this folder adds and/or modifies one or more packages to/in `pkgs`.
-[`./default.nix`](./default.nix) exports all overlays as an attribute set; [`flake#outputs.packages.<arch>.*`](../flake.nix), exports all packages resulting from the overlays.
+[`./default.nix`](./default.nix) exports all overlays as an attribute set; 
+[`flake#outputs.packages.<arch>.*`](../flake.nix), exports all packages resulting from the overlays.
 
 
 ## Template/Examples
